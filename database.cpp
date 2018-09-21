@@ -1,5 +1,10 @@
 #include "database.h"
 #include "logger.h"
+#include "utils.h"
+#include "config.h"
+
+#include <sys/stat.h>
+#include <sys/types.h>
 
 Database* Database::self = NULL;
 
@@ -50,8 +55,25 @@ void Database::Destroy()
 bool Database::Open()
 {
   int rc = SQLITE_ERROR;
+	std::string db_file_name;
+	std::string _db_file_path;
 
-  rc = sqlite3_open("test.db", &db);
+	Utils::GetCurrDateTimeMs(db_file_name);
+	db_file_name += ".db";
+	_db_file_path = config.db_file_path;
+
+	if (mkdir(_db_file_path.c_str(), 0755)) {
+		LOG(LOG_ERROR, "Opening DB\n");
+		return false;
+	}
+
+	if (_db_file_path[_db_file_path.length()-1] != '/') {
+		_db_file_path += "/";
+	}
+
+	_db_file_path += db_file_name;
+
+  rc = sqlite3_open(_db_file_path.c_str(), &db);
 
   if (rc != SQLITE_OK) {
     LOG(LOG_ERROR, "%s\n", sqlite3_errmsg(db));

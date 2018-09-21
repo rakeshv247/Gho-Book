@@ -4,6 +4,9 @@
 
 #include <stdarg.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
 
 #define WRITE_INFO_LOG(FMT) fprintf(stderr, "INFO: %s", FMT)
 #define WRITE_ERROR_LOG(FMT) fprintf(stderr, "ERROR: %s", FMT)
@@ -41,11 +44,17 @@ bool Logger::Open()
   Utils::GetCurrDateTimeMs(log_file_name);
   log_file_name += ".log";
 
+  if (mkdir(_log_file_path.c_str(), 0755) == -1) {
+    if (errno != EEXIST) {
+      fprintf(stderr, "ERROR: Creating/Opening LOG Directory\n");
+      return false;
+    }
+  }
+
   if (_log_file_path[_log_file_path.length()-1] != '/') {
     _log_file_path += "/";
   }
 
-  // Do Make Directory of LOG
   _log_file_path += log_file_name;
 
   logfile = fopen(_log_file_path.c_str(), "w");
@@ -86,12 +95,13 @@ void Logger::LogWrite(LogMode mode, const char *fmt, ...)
       }
     case LOG_DEBUG:
       {
-        WRITE_DEBUG_LOG(temp);
+		    WRITE_DEBUG_LOG(temp);
         break;
       }
     default:
       {
         WRITE_DEBUG_LOG(temp);
+        break;
       }
   }
 
